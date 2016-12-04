@@ -1,56 +1,99 @@
-#include <SDL.h>
-#include <exception>
-#include <iostream>
+#include <map>
 #include <string>
+#include <iostream>
+#include <stdio.h>
 
-#define ASSERT(cnd, msg) if (cnd) throw std::exception(&(msg)[0]);
+using namespace std;
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+/*	CLASSE FECHA	*/
 
-void Init(SDL_Window* &window, SDL_Renderer* &renderer) {
-	ASSERT(SDL_Init(SDL_INIT_VIDEO) < 0, "SDL could not initialize!");
-	ASSERT(!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"), "Warning: Linear texture filtering not enabled!");
-	window = SDL_CreateWindow("Hello SDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-	ASSERT(window == nullptr, "Window could not be created!");
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	ASSERT(renderer == nullptr, "Renderer could not be created!");
-	SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+class Fecha {
+public:
+	int dia, mes;
+	Fecha(int day, int month): dia(day), mes(month){}
+
+};
+
+inline bool operator < (const Fecha &f1, const Fecha &f2) {
+	if (f1.mes < f2.mes) { return true; };
+	if (f1.mes == f2.mes) {
+		if (f1.dia < f2.dia) { return true; }
+		else return false;
+	}
+	else return false;
+};
+
+inline bool operator == (const Fecha &f1, const Fecha &f2) {
+	if (f1.mes == f2.mes && f1.dia == f2.dia) { return true; }
+	else return false;
 }
 
-void Close(SDL_Window* &window, SDL_Renderer* &renderer) {
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	window = nullptr;
-	renderer = nullptr;
-	SDL_Quit();
+/* CLASSE HORA	*/
+
+class Hora {
+public:
+	int hora, minutos;
+	Hora(int hour, int minutes) : hora(hour), minutos(minutes){}
+};
+
+inline bool operator == (const Hora &h1, const Hora &h2) {
+	if (h1.hora == h2.hora && h1.minutos == h2.minutos) { return true; }
+	else return false;
 }
 
-int main(int argc, char *argv[]) {
-	try {
-		SDL_Window* window = nullptr;
-		SDL_Renderer* renderer = nullptr;
-		Init(window, renderer);
-		SDL_Event e;
-		bool quit = false;
-		SDL_Color newColor{ 0,0,0 }, prevColor{ 0,0,0 };
-		float percent = 0.0f;
-		auto lerp = [](float v0, float v1, float t) { return (1 - t)*v0 + t*v1; };
-		while (!quit) {
-			if (!SDL_PollEvent(&e)) if (e.type == SDL_QUIT) quit = true;
-			SDL_RenderClear(renderer);
-			(percent > 1.0f) ? (prevColor = newColor, newColor = { Uint8(rand() % 0xFF), Uint8(rand() % 0xFF), Uint8(rand() % 0xFF) }, percent = 0.0f)
-				: percent += .0002f;
-			SDL_SetRenderDrawColor(renderer, lerp(prevColor.r, newColor.r, percent), lerp(prevColor.g, newColor.g, percent), lerp(prevColor.b, newColor.b, percent), 0xFF);
-			SDL_RenderPresent(renderer);
-		}
-		Close(window, renderer);
+inline bool operator < (const Hora &h1, const Hora &h2) {
+	if (h1.hora < h2.hora) { return true; }
+	if (h1.hora == h2.hora) {
+		if (h1.minutos < h2.minutos) { return true; }
+		else return false;
 	}
-	catch (std::exception e) {
-		std::cout << e.what() << std::endl;
-		auto sdlError = SDL_GetError();
-		if (strlen(sdlError)) std::cout << "SDL Error: " << sdlError << std::endl;
-		std::cin.get();
+	else return false;
+}
+
+/* CLASSE AGENDA	*/
+
+class Agenda {
+	private:
+	map <Hora, string> dayCalendar;
+	map <Fecha, map <Hora, string>> calendari;
+	
+public:
+	void insertarEvento(const Fecha &fecha, const Hora &hora, const string &description) {	
+		dayCalendar.insert(pair<const Hora, string>(hora, description));
+		calendari.insert(pair <const Fecha, map<Hora, string>> (fecha, dayCalendar));
 	}
+
+	void provaInsertar(const Fecha &fecha, string fet);
+	
+	void printKey();
+};
+
+/*
+void Agenda::provaInsertar(const Fecha &fecha, string fet) {
+	Agenda::provam.insert(Agenda::provam.begin(), pair <const Fecha, string > (fecha, fet));
+}*/
+
+
+void Agenda::printKey() {
+	for (auto it = calendari.begin(); it != calendari.end(); ++it) {
+		cout << it->first.dia << " Del mes: " << it->first.mes << " tenc: " << it->second << "\n";
+	}
+}
+
+/*	MAIN	*/
+
+int main() {
+
+	Agenda a;
+	const Fecha primer (6,2);
+	const Fecha segon(6, 5);
+	const Hora hour(17, 40);
+	const Hora hour2(19, 10); 
+
+	a.insertarEvento(primer, hour, "Reunion");
+	a.insertarEvento(segon, hour2, "Partido de futbol");
+
+	a.printKey();
+
 	return 0;
-}
+}
